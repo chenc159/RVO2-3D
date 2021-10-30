@@ -71,4 +71,17 @@ if(BUILD_TESTING)
   set_tests_properties(Sphere PROPERTIES
     LABELS medium
     TIMEOUT 60)
+
+  add_executable(main main.cpp)
+  target_compile_definitions(main PRIVATE
+    ${RVO3D_EXAMPLES_COMPILE_DEFINITIONS})
+  target_link_libraries(main PRIVATE ${RVO3D_LIBRARY})
+  target_compile_options(main PRIVATE ${RVO3D_EXAMPLES_COMPILE_OPTIONS})
+  set_target_properties(main PROPERTIES
+    INTERPROCEDURAL_OPTIMIZATION ${RVO3D_EXAMPLES_INTERPROCEDURAL_OPTIMIZATION}
+    LINK_FLAGS "${RVO3D_EXAMPLES_LINK_FLAGS}")
+  add_test(NAME main COMMAND main)
+  set_tests_properties(main PROPERTIES
+    LABELS medium
+    TIMEOUT 60)
 endif()

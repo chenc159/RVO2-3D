@@ -6,3 +6,5 @@
 # testing this directory and lists subdirectories to be tested as well.
 add_test(Sphere "/home/chihunen/catkin_ws/src/RVO2-3D/examples/Sphere")
 set_tests_properties(Sphere PROPERTIES  LABELS "medium" TIMEOUT "60")
+add_test(main "/home/chihunen/catkin_ws/src/RVO2-3D/examples/main")
+set_tests_properties(main PROPERTIES  LABELS "medium" TIMEOUT "60")

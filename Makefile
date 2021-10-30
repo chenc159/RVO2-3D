@@ -567,6 +567,19 @@ RVO3D/fast:
 .PHONY : RVO3D/fast
 
 #=============================================================================
+# Target rules for targets named main
+
+# Build rule for target.
+main: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 main
+.PHONY : main
+
+# fast build rule for target.
+main/fast:
+	$(MAKE) -f examples/CMakeFiles/main.dir/build.make examples/CMakeFiles/main.dir/build
+.PHONY : main/fast
+
+#=============================================================================
 # Target rules for targets named Sphere
 
 # Build rule for target.
@@ -623,6 +636,7 @@ help:
 	@echo "... NightlyTest"
 	@echo "... rebuild_cache"
 	@echo "... RVO3D"
+	@echo "... main"
 	@echo "... Sphere"
 .PHONY : help
 

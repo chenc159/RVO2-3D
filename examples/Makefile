@@ -90,27 +90,27 @@ list_install_components/fast: list_install_components
 
 .PHONY : list_install_components/fast
 
-# Special rule for the target package
-package: preinstall
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Run CPack packaging tool..."
-	cd /home/chihunen/catkin_ws/src/RVO2-3D && /usr/bin/cpack --config ./CPackConfig.cmake
-.PHONY : package
+# Special rule for the target rebuild_cache
+rebuild_cache:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
+	/usr/bin/cmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+.PHONY : rebuild_cache
 
-# Special rule for the target package
-package/fast: package
+# Special rule for the target rebuild_cache
+rebuild_cache/fast: rebuild_cache
 
-.PHONY : package/fast
+.PHONY : rebuild_cache/fast
 
-# Special rule for the target package_source
-package_source:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Run CPack packaging tool for source..."
-	cd /home/chihunen/catkin_ws/src/RVO2-3D && /usr/bin/cpack --config ./CPackSourceConfig.cmake /home/chihunen/catkin_ws/src/RVO2-3D/CPackSourceConfig.cmake
-.PHONY : package_source
+# Special rule for the target edit_cache
+edit_cache:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
+	/usr/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+.PHONY : edit_cache
 
-# Special rule for the target package_source
-package_source/fast: package_source
+# Special rule for the target edit_cache
+edit_cache/fast: edit_cache
 
-.PHONY : package_source/fast
+.PHONY : edit_cache/fast
 
 # Special rule for the target install/local
 install/local: preinstall
@@ -135,27 +135,27 @@ test/fast: test
 
 .PHONY : test/fast
 
-# Special rule for the target edit_cache
-edit_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
-	/usr/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
-.PHONY : edit_cache
+# Special rule for the target package
+package: preinstall
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Run CPack packaging tool..."
+	cd /home/chihunen/catkin_ws/src/RVO2-3D && /usr/bin/cpack --config ./CPackConfig.cmake
+.PHONY : package
 
-# Special rule for the target edit_cache
-edit_cache/fast: edit_cache
+# Special rule for the target package
+package/fast: package
 
-.PHONY : edit_cache/fast
+.PHONY : package/fast
 
-# Special rule for the target rebuild_cache
-rebuild_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
-	/usr/bin/cmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
-.PHONY : rebuild_cache
+# Special rule for the target package_source
+package_source:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Run CPack packaging tool for source..."
+	cd /home/chihunen/catkin_ws/src/RVO2-3D && /usr/bin/cpack --config ./CPackSourceConfig.cmake /home/chihunen/catkin_ws/src/RVO2-3D/CPackSourceConfig.cmake
+.PHONY : package_source
 
-# Special rule for the target rebuild_cache
-rebuild_cache/fast: rebuild_cache
+# Special rule for the target package_source
+package_source/fast: package_source
 
-.PHONY : rebuild_cache/fast
+.PHONY : package_source/fast
 
 # The main all target
 all: cmake_check_build_system
@@ -188,6 +188,21 @@ preinstall/fast:
 depend:
 	cd /home/chihunen/catkin_ws/src/RVO2-3D && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
+
+# Convenience name for target.
+examples/CMakeFiles/main.dir/rule:
+	cd /home/chihunen/catkin_ws/src/RVO2-3D && $(MAKE) -f CMakeFiles/Makefile2 examples/CMakeFiles/main.dir/rule
+.PHONY : examples/CMakeFiles/main.dir/rule
+
+# Convenience name for target.
+main: examples/CMakeFiles/main.dir/rule
+
+.PHONY : main
+
+# fast build rule for target.
+main/fast:
+	cd /home/chihunen/catkin_ws/src/RVO2-3D && $(MAKE) -f examples/CMakeFiles/main.dir/build.make examples/CMakeFiles/main.dir/build
+.PHONY : main/fast
 
 # Convenience name for target.
 examples/CMakeFiles/Sphere.dir/rule:
@@ -231,6 +246,33 @@ Sphere.cpp.s:
 	cd /home/chihunen/catkin_ws/src/RVO2-3D && $(MAKE) -f examples/CMakeFiles/Sphere.dir/build.make examples/CMakeFiles/Sphere.dir/Sphere.cpp.s
 .PHONY : Sphere.cpp.s
 
+main.o: main.cpp.o
+
+.PHONY : main.o
+
+# target to build an object file
+main.cpp.o:
+	cd /home/chihunen/catkin_ws/src/RVO2-3D && $(MAKE) -f examples/CMakeFiles/main.dir/build.make examples/CMakeFiles/main.dir/main.cpp.o
+.PHONY : main.cpp.o
+
+main.i: main.cpp.i
+
+.PHONY : main.i
+
+# target to preprocess a source file
+main.cpp.i:
+	cd /home/chihunen/catkin_ws/src/RVO2-3D && $(MAKE) -f examples/CMakeFiles/main.dir/build.make examples/CMakeFiles/main.dir/main.cpp.i
+.PHONY : main.cpp.i
+
+main.s: main.cpp.s
+
+.PHONY : main.s
+
+# target to generate assembly for a file
+main.cpp.s:
+	cd /home/chihunen/catkin_ws/src/RVO2-3D && $(MAKE) -f examples/CMakeFiles/main.dir/build.make examples/CMakeFiles/main.dir/main.cpp.s
+.PHONY : main.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -240,16 +282,20 @@ help:
 	@echo "... install/strip"
 	@echo "... install"
 	@echo "... list_install_components"
-	@echo "... package"
-	@echo "... package_source"
-	@echo "... Sphere"
+	@echo "... rebuild_cache"
+	@echo "... main"
+	@echo "... edit_cache"
 	@echo "... install/local"
 	@echo "... test"
-	@echo "... edit_cache"
-	@echo "... rebuild_cache"
+	@echo "... package"
+	@echo "... Sphere"
+	@echo "... package_source"
 	@echo "... Sphere.o"
 	@echo "... Sphere.i"
 	@echo "... Sphere.s"
+	@echo "... main.o"
+	@echo "... main.i"
+	@echo "... main.s"
 .PHONY : help
 
 

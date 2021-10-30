@@ -74,7 +74,7 @@ void setupScenario(RVO::RVOSimulator *sim)
 			goals.push_back(-sim->getAgentPosition(sim->getNumAgents() - 1));
 		}
 	}
-	std::cout << sim->getNumAgents() << std::endl;
+	// std::cout << sim->getNumAgents() << std::endl;
 }
 
 #if RVO3D_OUTPUT_TIME_AND_POSITIONS
