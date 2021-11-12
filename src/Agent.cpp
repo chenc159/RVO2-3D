@@ -8,7 +8,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     https://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,13 +27,14 @@
  * Chapel Hill, N.C. 27599-3175
  * United States of America
  *
- * <https://gamma.cs.unc.edu/RVO2/>
+ * <http://gamma.cs.unc.edu/RVO2/>
  */
 
 #include "Agent.h"
 
 #include <cmath>
 #include <algorithm>
+#include <iostream>
 
 #include "Definitions.h"
 #include "KdTree.h"
@@ -42,7 +43,7 @@ namespace RVO {
 	/**
 	 * \brief   A sufficiently small positive number.
 	 */
-	const float RVO3D_EPSILON = 0.00001f;
+	const float RVO_EPSILON = 0.00001f;
 
 	/**
 	 * \brief   Defines a directed line.
@@ -155,12 +156,12 @@ namespace RVO {
 					const float b = relativePosition * relativeVelocity;
 					const float c = absSq(relativeVelocity) - absSq(cross(relativePosition, relativeVelocity)) / (distSq - combinedRadiusSq);
 					const float t = (b + std::sqrt(sqr(b) - a * c)) / a;
-					const Vector3 ww = relativeVelocity - t * relativePosition;
-					const float wwLength = abs(ww);
-					const Vector3 unitWW = ww / wwLength;
+					const Vector3 w = relativeVelocity - t * relativePosition;
+					const float wLength = abs(w);
+					const Vector3 unitW = w / wLength;
 
-					plane.normal = unitWW;
-					u = (combinedRadius * t - wwLength) * unitWW;
+					plane.normal = unitW;
+					u = (combinedRadius * t - wLength) * unitW;
 				}
 			}
 			else {
@@ -172,6 +173,100 @@ namespace RVO {
 
 				plane.normal = unitW;
 				u = (combinedRadius * invTimeStep - wLength) * unitW;
+			}
+
+			plane.point = velocity_ + 0.5f * u;
+			orcaPlanes_.push_back(plane);
+		}
+
+		const size_t planeFail = linearProgram3(orcaPlanes_, maxSpeed_, prefVelocity_, false, newVelocity_);
+
+		if (planeFail < orcaPlanes_.size()) {
+			linearProgram4(orcaPlanes_, planeFail, maxSpeed_, newVelocity_);
+		}
+	}
+
+	void Agent::computeNewVelocityCyl()
+	{
+		orcaPlanes_.clear();
+		const float invTimeHorizon = 1.0f / timeHorizon_;
+
+		/* Create agent ORCA planes. */
+		for (size_t i = 0; i < agentNeighbors_.size(); ++i) {
+			const Agent *const other = agentNeighbors_[i].second;
+			const Vector3 relativePosition = other->position_ - position_;
+			const Vector3 relativeVelocity = velocity_ - other->velocity_;
+			const float distSq = absSq(relativePosition);
+			// const float distSq_xy = absSq(relativePosition[0:2]);
+			const float combinedRadius = radius_ + other->radius_;
+			const float combinedRadiusSq = sqr(combinedRadius);
+			const float heightSq = sqr(cylHeight_);
+
+			Plane plane;
+			Vector3 u;
+
+			if (sqr(relativePosition[0])+sqr(relativePosition[1]) > combinedRadiusSq | sqr(relativePosition[3]) > cylHeight_){
+				/* No collision. */
+				const Vector3 w = relativeVelocity - invTimeHorizon * relativePosition;
+				/* Vector from cutoff center to relative velocity. */
+				const float wLengthSq = absSq(w);
+				const float wLengthSq_xy = sqr(w[0])+sqr(w[1]);
+				const float wLengthSq_z = sqr(w[2]);
+
+				const float dotProduct = w * relativePosition;
+				const float dotProduct_xy = w[0]*relativePosition[0] + w[1]*relativePosition[1];
+				const float dotProduct_z = w[2]*relativePosition[2];
+				// if (dotProduct_xy < 0.0f && dotProduct_z < 0.0f && sqr(dotProduct_xy) > combinedRadiusSq * wLengthSq_xy && sqr(dotProduct_z) > heightSq * wLengthSq_z) {
+				if (dotProduct < 0.0f && sqr(dotProduct) > combinedRadiusSq * wLengthSq) {
+					/* Project on cut-off circle. */
+					const float wLength = std::sqrt(wLengthSq);
+					const Vector3 unitW = w / wLength;
+
+					plane.normal = unitW;
+					u[0] = (combinedRadius * invTimeHorizon - std::sqrt(wLengthSq_xy)) * unitW[0];
+					u[1] = (combinedRadius * invTimeHorizon - std::sqrt(wLengthSq_xy)) * unitW[1];
+					u[2] = (cylHeight_ * invTimeHorizon - std::sqrt(wLengthSq_z)) * unitW[2];
+					// u = (combinedRadius * invTimeHorizon - wLength) * unitW;
+					// u[2] = (cylHeight_ * invTimeHorizon - wLength) * unitW[2];
+					// std::cout << i << ",(1) " << u << std::endl;
+				}
+				else {
+					/* Project on cone. */
+					const float a = distSq;
+					const float b = relativePosition * relativeVelocity;
+					const float c = absSq(relativeVelocity) - absSq(cross(relativePosition, relativeVelocity)) / (distSq - combinedRadiusSq);
+					const float t = (b + std::sqrt(sqr(b) - a * c)) / a;
+					const Vector3 w = relativeVelocity - t * relativePosition;
+					const float wLength = abs(w);
+					const Vector3 unitW = w / wLength;
+
+					plane.normal = unitW;
+					u[0] = (combinedRadius * t - std::sqrt(wLengthSq_xy)) * unitW[0];
+					u[1] = (combinedRadius * t - std::sqrt(wLengthSq_xy)) * unitW[1];
+					u[2] = (cylHeight_ * t - std::sqrt(wLengthSq_z)) * unitW[2];
+					// u = (combinedRadius * t - wLength) * unitW;
+					// u[2] = (cylHeight_ * t - wLength) * unitW[2];
+					// std::cout << i << ",(2) " << u << std::endl;
+				}
+
+			}
+			else {
+				/* Collision. */
+				const float invTimeStep = 1.0f / sim_->timeStep_;
+				const Vector3 w = relativeVelocity - invTimeStep * relativePosition;
+				const float wLength = abs(w);
+				const float wLengthSq_xy = sqr(w[0])+sqr(w[1]);
+				const float wLengthSq_z = sqr(w[2]);
+				const Vector3 unitW = w / wLength;
+
+				plane.normal = unitW;
+				u[0] = (combinedRadius * invTimeStep - std::sqrt(wLengthSq_xy)) * unitW[0];
+				u[1] = (combinedRadius * invTimeStep - std::sqrt(wLengthSq_xy)) * unitW[1];
+				u[2] = (cylHeight_ * invTimeStep - std::sqrt(wLengthSq_z)) * unitW[2];
+				// u = (combinedRadius * invTimeStep - wLength) * unitW;
+				// u[2] = (cylHeight_ * invTimeStep - wLength) * unitW[2];
+				// std::cout << i << ",(3) " << u << std::endl;
+
 			}
 
 			plane.point = velocity_ + 0.5f * u;
@@ -235,7 +330,7 @@ namespace RVO {
 			const float numerator = (planes[i].point - line.point) * planes[i].normal;
 			const float denominator = line.direction * planes[i].normal;
 
-			if (sqr(denominator) <= RVO3D_EPSILON) {
+			if (sqr(denominator) <= RVO_EPSILON) {
 				/* Lines line is (almost) parallel to plane i. */
 				if (numerator > 0.0f) {
 					return false;
@@ -310,7 +405,7 @@ namespace RVO {
 			const Vector3 planeOptVelocity = optVelocity - (optVelocity * planes[planeNo].normal) * planes[planeNo].normal;
 			const float planeOptVelocityLengthSq = absSq(planeOptVelocity);
 
-			if (planeOptVelocityLengthSq <= RVO3D_EPSILON) {
+			if (planeOptVelocityLengthSq <= RVO_EPSILON) {
 				result = planeCenter;
 			}
 			else {
@@ -335,7 +430,7 @@ namespace RVO {
 				/* Compute intersection line of plane i and plane planeNo. */
 				Vector3 crossProduct = cross(planes[i].normal, planes[planeNo].normal);
 
-				if (absSq(crossProduct) <= RVO3D_EPSILON) {
+				if (absSq(crossProduct) <= RVO_EPSILON) {
 					/* Planes planeNo and i are (almost) parallel, and plane i fully invalidates plane planeNo. */
 					return false;
 				}
@@ -398,7 +493,7 @@ namespace RVO {
 
 					const Vector3 crossProduct = cross(planes[j].normal, planes[i].normal);
 
-					if (absSq(crossProduct) <= RVO3D_EPSILON) {
+					if (absSq(crossProduct) <= RVO_EPSILON) {
 						/* Plane i and plane j are (almost) parallel. */
 						if (planes[i].normal * planes[j].normal > 0.0f) {
 							/* Plane i and plane j point in the same direction. */

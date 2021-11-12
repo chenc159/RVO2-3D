@@ -8,7 +8,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     https://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,7 +27,7 @@
  * Chapel Hill, N.C. 27599-3175
  * United States of America
  *
- * <https://gamma.cs.unc.edu/RVO2/>
+ * <http://gamma.cs.unc.edu/RVO2/>
  */
 
 #include "RVOSimulator.h"
@@ -102,9 +102,9 @@ namespace RVO {
 
 	size_t RVOSimulator::addAgent(const Vector3 &position)
 	{
-		if (defaultAgent_ == NULL) {
-			return RVO3D_ERROR;
-		}
+		// if (defaultAgent_ == NULL) {
+		// 	return RVO_ERROR;
+		// }
 
 		Agent *agent = new Agent(this);
 
@@ -115,6 +115,31 @@ namespace RVO {
 		agent->radius_ = defaultAgent_->radius_;
 		agent->timeHorizon_ = defaultAgent_->timeHorizon_;
 		agent->velocity_ = defaultAgent_->velocity_;
+
+		agent->id_ = agents_.size();
+
+		agents_.push_back(agent);
+
+		return agents_.size() - 1;
+	}
+
+	size_t RVOSimulator::addAgentCyl(const Vector3 &position)
+	{
+		// if (defaultAgent_ == NULL) {
+		// 	return RVO_ERROR;
+		// }
+
+		Agent *agent = new Agent(this);
+
+		agent->position_ = position;
+		agent->maxNeighbors_ = defaultAgent_->maxNeighbors_;
+		agent->maxSpeed_ = defaultAgent_->maxSpeed_;
+		agent->neighborDist_ = defaultAgent_->neighborDist_;
+		agent->radius_ = defaultAgent_->radius_;
+		agent->timeHorizon_ = defaultAgent_->timeHorizon_;
+		agent->velocity_ = defaultAgent_->velocity_;
+		agent->cyl_ = defaultAgent_->cyl_;
+		agent->cylHeight_ = defaultAgent_->cylHeight_;
 
 		agent->id_ = agents_.size();
 
@@ -151,7 +176,11 @@ namespace RVO {
 #endif
 		for (int i = 0; i < static_cast<int>(agents_.size()); ++i) {
 			agents_[i]->computeNeighbors();
-			agents_[i]->computeNewVelocity();
+			if (agents_[i]->cyl_){
+				agents_[i]->computeNewVelocityCyl();
+			} else{
+				agents_[i]->computeNewVelocity();
+			}
 		}
 
 #ifdef _OPENMP
@@ -194,6 +223,16 @@ namespace RVO {
 		return agents_[agentNo]->radius_;
 	}
 
+	float RVOSimulator::getAgentHeight(size_t agentNo) const
+	{
+		return agents_[agentNo]->cylHeight_;
+	}
+
+	bool RVOSimulator::getsimMode(size_t agentNo) const
+	{
+		return agents_[agentNo]->cyl_;
+	}
+
 	float RVOSimulator::getAgentTimeHorizon(size_t agentNo) const
 	{
 		return agents_[agentNo]->timeHorizon_;
@@ -231,6 +270,22 @@ namespace RVO {
 		defaultAgent_->radius_ = radius;
 		defaultAgent_->timeHorizon_ = timeHorizon;
 		defaultAgent_->velocity_ = velocity;
+	}
+
+	void RVOSimulator::setAgentDefaultsCyl(float neighborDist, size_t maxNeighbors, float timeHorizon, float radius, float maxSpeed, bool cyl, float cylHeight, const Vector3 &velocity)
+	{
+		if (defaultAgent_ == NULL) {
+			defaultAgent_ = new Agent(this);
+		}
+
+		defaultAgent_->maxNeighbors_ = maxNeighbors;
+		defaultAgent_->maxSpeed_ = maxSpeed;
+		defaultAgent_->neighborDist_ = neighborDist;
+		defaultAgent_->radius_ = radius;
+		defaultAgent_->timeHorizon_ = timeHorizon;
+		defaultAgent_->velocity_ = velocity;
+		defaultAgent_->cyl_ = cyl;
+		defaultAgent_->cylHeight_ = cylHeight;
 	}
 
 	void RVOSimulator::setAgentMaxNeighbors(size_t agentNo, size_t maxNeighbors)

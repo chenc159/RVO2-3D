@@ -65,6 +65,7 @@ namespace RVO {
 		 * \brief   Computes the new velocity of this agent.
 		 */
 		void computeNewVelocity();
+		void computeNewVelocityCyl();
 
 		/**
 		 * \brief   Inserts an agent neighbor into the set of neighbors of this agent.
@@ -91,6 +92,8 @@ namespace RVO {
 		float timeHorizon_;
 		std::vector<std::pair<float, const Agent *> > agentNeighbors_;
 		std::vector<Plane> orcaPlanes_;
+		bool cyl_;
+		float cylHeight_;
 
 		friend class KdTree;
 		friend class RVOSimulator;

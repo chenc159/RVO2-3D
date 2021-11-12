@@ -61,7 +61,9 @@ void setupScenario(RVO::RVOSimulator *sim)
 
 	/* Specify the default parameters for agents that are subsequently added. */
 	// setAgentDefaults(float neighborDist, size_t maxNeighbors, float timeHorizon, float radius, float maxSpeed, const Vector3 &velocity)
-	sim->setAgentDefaults(15.0f, 10, 1.0f, 1.5f, 2.0f);
+	// sim->setAgentDefaults(15.0f, 10, 1.0f, 1.5f, 2.0f);
+	sim->setAgentDefaultsCyl(15.0f, 10, 1.0f, 1.5f, 2.0f, true, 6.0f);
+	// sim->setAgentDefaultsCyl(15.0f, 10, 1.0f, 1.5f, 2.0f, false, 3.5f);
 
 
 
@@ -83,10 +85,17 @@ void setupScenario(RVO::RVOSimulator *sim)
 	// 	}
 	// 	if (sim->getNumAgents() >= 5){break;}
 	// }
-	sim->addAgent(RVO::Vector3(10, 10, 10));
-	sim->addAgent(RVO::Vector3(-10, 10, 10));
-	sim->addAgent(RVO::Vector3(-10, -10, 10));
-	sim->addAgent(RVO::Vector3(10, -10, 10));
+
+
+	// sim->addAgent(RVO::Vector3(10, 10, 10));
+	// sim->addAgent(RVO::Vector3(-10, 10, 10));
+	// sim->addAgent(RVO::Vector3(-10, -10, 10));
+	// sim->addAgent(RVO::Vector3(10, -10, 10));
+
+	sim->addAgentCyl(RVO::Vector3(10, 10, 10));
+	sim->addAgentCyl(RVO::Vector3(-10, 10, 10));
+	sim->addAgentCyl(RVO::Vector3(-10, -10, 10));
+	sim->addAgentCyl(RVO::Vector3(10, -10, 10));
 
 	// goals.push_back(RVO::Vector3(-4.99, 0, 10));
 	// goals.push_back(RVO::Vector3(0, 5, 10));
@@ -157,14 +166,53 @@ bool collision(RVO::RVOSimulator *sim)
 	/* Check if all agents have reached their goals. */
 	for (size_t i = 0; i < sim->getNumAgents(); ++i) {
 		for (size_t j = i+1; j < sim->getNumAgents(); ++j) {
-			if (RVO::abs(sim->getAgentPosition(i) - sim->getAgentPosition(j)) <= 2.0f * sim->getAgentRadius(i)) {
-				// std::cout << RVO::abs(sim->getAgentPosition(i) - sim->getAgentPosition(j)) << std::endl;
+			RVO::Vector3 pos_i = sim->getAgentPosition(i);
+			RVO::Vector3 pos_j = sim->getAgentPosition(j);
+			// if (!sim->getsimMode(i) && RVO::abs(pos_i - pos_j) <= 2.0f * sim->getAgentRadius(i)) {
+			// 	std::cout << RVO::abs(sim->getAgentPosition(i) - sim->getAgentPosition(j)) << std::endl;
+			// 	std::cout << "sph height, " << std::abs(pos_i[2] - pos_j[2]) << ", " << sim->getAgentHeight(i) << std::endl;
+			// 	return true;
+			// } else if (	sim->getsimMode(i) && 
+			// 			(std::sqrt((pos_i[0]-pos_j[0])*(pos_i[0]-pos_j[0]) + (pos_i[1]-pos_j[1])*(pos_i[1]-pos_j[1])) <= 2.0f * sim->getAgentRadius(i)) &&
+			// 			(std::abs(pos_i[2] - pos_j[2]) < sim->getAgentHeight(i))) {
+			// 	std::cout << "cyl height, " << std::abs(pos_i[2] - pos_j[2]) << ", " << sim->getAgentHeight(i) << std::endl;
+			// 	// std::cout << std::sqrt((pos_i[0]-pos_j[0])*(pos_i[0]-pos_j[0]) + (pos_i[1]-pos_j[1])*(pos_i[1]-pos_j[1])) << std::endl;
+			// 	return true;
+			// }
+			if (RVO::abs(pos_i - pos_j) <= 2.0f * sim->getAgentRadius(i)) {
+				std::cout << RVO::abs(sim->getAgentPosition(i) - sim->getAgentPosition(j)) << std::endl;
+				std::cout << std::abs(pos_i[2] - pos_j[2]) << ", " << sim->getAgentHeight(i) << std::endl;
 				return true;
 			}
 		}
 	}
 
 	return false;
+}
+
+float get_h_min(RVO::RVOSimulator *sim, float rh_min)
+{
+	for (size_t i = 0; i < sim->getNumAgents(); ++i) {
+		for (size_t j = i+1; j < sim->getNumAgents(); ++j) {
+			RVO::Vector3 pos_i = sim->getAgentPosition(i);
+			RVO::Vector3 pos_j = sim->getAgentPosition(j);
+			// std::cout << "h_min, " << h_min << std::endl;
+			// std::cout << "22, " << std::abs(pos_i[2] - pos_j[2]) << ", " << sim->getAgentHeight(i) << std::endl;
+			// std::cout << std::sqrt((pos_i[0]-pos_j[0])*(pos_i[0]-pos_j[0]) + (pos_i[1]-pos_j[1])*(pos_i[1]-pos_j[1])) << std::endl;
+
+			// if (std::sqrt((pos_i[0]-pos_j[0])*(pos_i[0]-pos_j[0]) + (pos_i[1]-pos_j[1])*(pos_i[1]-pos_j[1])) <= rh_min[0] 
+			// 	&& std::abs(pos_i[2] - pos_j[2]) < sim->getAgentHeight(i)){
+			// 	rh_min[0] = std::sqrt((pos_i[0]-pos_j[0])*(pos_i[0]-pos_j[0]) + (pos_i[1]-pos_j[1])*(pos_i[1]-pos_j[1]));
+			// 	std::cout << "r_min: " << i << "," << j << " " << rh_min[0] << std::endl;
+			// }
+			if (std::sqrt((pos_i[0]-pos_j[0])*(pos_i[0]-pos_j[0]) + (pos_i[1]-pos_j[1])*(pos_i[1]-pos_j[1])) <= 2.0f * sim->getAgentRadius(i) && 
+				std::abs(pos_i[2] - pos_j[2]) < rh_min){
+				rh_min = std::abs(sim->getAgentPosition(i)[2] - sim->getAgentPosition(j)[2]);
+				std::cout << "h_min: " << i << "," << j << " " << rh_min << std::endl;
+			}
+		}
+	}
+	return rh_min;
 }
 
 int main()
@@ -176,6 +224,9 @@ int main()
 
 	/* Set up the scenario. */
 	setupScenario(sim);
+
+	// float rh_min[2] = {999.99, 999.99};
+	float rh_min = 999.99;
 
 	
 	/* Record data in .csv */
@@ -206,6 +257,7 @@ int main()
 			// std::cout << i << "vel" << sim->getAgentVelocity(i) << std::endl;
 		}
 		myfile << "\n";
+		rh_min = get_h_min(sim, rh_min);
 		if (collision(sim)){ std::cout << sim->getGlobalTime() << ", Collide!!!" << std::endl; break; }
 		if (sim->getGlobalTime() >= 100){ std::cout << sim->getGlobalTime() << ", Stuck!!!" << std::endl; break; }
 		// do {
@@ -225,6 +277,8 @@ int main()
 	delete sim;
 
     printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
+    // printf("Minimum range difference: %.2f\n", rh_min[0]);
+    printf("Minimum altitude difference: %.2f\n", rh_min);
 
 
 	return 0;

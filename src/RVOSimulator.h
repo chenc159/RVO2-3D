@@ -118,6 +118,8 @@ namespace RVO {
 		 * \param   velocity      The initial three-dimensional linear velocity of this agent (optional).
 		 * \return  The number of the agent.
 		 */
+		size_t addAgentCyl(const Vector3 &position);
+
 		size_t addAgent(const Vector3 &position, float neighborDist, size_t maxNeighbors, float timeHorizon, float radius, float maxSpeed, const Vector3 &velocity = Vector3());
 
 		/**
@@ -197,6 +199,8 @@ namespace RVO {
 		 * \return  The present radius of the agent.
 		 */
 		float getAgentRadius(size_t agentNo) const;
+		float getAgentHeight(size_t agentNo) const;
+		bool getsimMode(size_t agentNo) const;
 
 		/**
 		 * \brief   Returns the time horizon of a specified agent.
@@ -253,6 +257,8 @@ namespace RVO {
 		 * \param   agentNo       The number of the agent whose maximum neighbor count is to be modified.
 		 * \param   maxNeighbors  The replacement maximum neighbor count.
 		 */
+		void setAgentDefaultsCyl(float neighborDist, size_t maxNeighbors, float timeHorizon, float radius, float maxSpeed, bool cyl, float cylHeight, const Vector3 &velocity = Vector3());
+
 		void setAgentMaxNeighbors(size_t agentNo, size_t maxNeighbors);
 
 		/**
