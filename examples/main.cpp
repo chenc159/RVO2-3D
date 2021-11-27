@@ -190,7 +190,7 @@ bool collision(RVO::RVOSimulator *sim)
 			// 	return true;
 			// }
 			if (RVO::abs(pos_i - pos_j) <= 2.0f * sim->getAgentRadius(i)) {
-				// std::cout << RVO::abs(sim->getAgentPosition(i) - sim->getAgentPosition(j)) << std::endl;
+				// std::cout << RVO::abs(pos_i - pos_j) << ", 2radius: " << 2.0f * sim->getAgentRadius(i) << std::endl;
 				// std::cout << std::abs(pos_i[2] - pos_j[2]) << ", " << sim->getAgentHeight(i) << std::endl;
 				// std::cout << i << ", " << j << " collision" << std::endl;
 				return true;
@@ -251,7 +251,7 @@ void downwash(RVO::RVOSimulator *sim){
 
 
 void cross(RVO::RVOSimulator *sim){
-	int num = 5;
+	int num = 10;
 	float rad = 0.4;
 	float width = 2.0;
     int count = 1;
@@ -321,7 +321,6 @@ void hover(RVO::RVOSimulator *sim){
 			count += 1;
 		}
 	}while(count<=num);
-
 }
 
 
@@ -331,10 +330,12 @@ int main()
 	int col = 0;
 	int stuck = 0;
 	int succ = 0;
+	float total_time = 0.0;
 	clock_t tStart = clock(); // start sim time
 	// seed(1)
 	float rh_min = 999.99;
-	for (size_t i = 0; i < 10; ++i) {
+	int iteration_num = 100;
+	for (size_t i = 0; i < iteration_num; ++i) {
 		// std::cout << i << " iteration: " << std::endl;
 		// float rand = std::rand()/float(RAND_MAX)*2;
 		// std::cout << RAND_MAX << " rand: " << rand << std::endl;
@@ -349,7 +350,8 @@ int main()
 		/* Set up the scenario. */
 		// setupScenario(sim);
 		sim->setTimeStep(0.01f);
-		sim->setAgentDefaultsCyl(0.4f, 10, 1.0f, 0.15f, 1.5f, false, 3.5f);
+		// sim->setAgentDefaultsCyl(0.5f, 20, 0.5/1.5, 0.15f, 1.5f, false, 3.5f);
+		sim->setAgentDefaultsCyl(0.6f, 10, 0.5/1.5, 0.15f, 1.5f, true, 0.6f);
 		cross(sim);
 		hover(sim);
 
@@ -384,28 +386,34 @@ int main()
 			myfile << "\n";
 			// rh_min = get_h_min(sim, rh_min);
 			if (collision(sim)){ std::cout << i << " iteration: " << sim->getGlobalTime() << "s, Collide!!!" << std::endl; col += 1; break; }
-			if (sim->getGlobalTime() >= 100){ std::cout << i << " iteration: " << sim->getGlobalTime() << "s, Stuck!!!" << std::endl; stuck += 1; break; }
+			if (sim->getGlobalTime() >= 50){ std::cout << i << " iteration: " << sim->getGlobalTime() << "s, Stuck!!!" << std::endl; stuck += 1; break; }
 			// do {
 			// 	std::cout << '\n' << "Press a key to continue...";
 			// } while (std::cin.get() != '\n');
 		}
 		while (!reachedGoal(sim));
-		if (reachedGoal(sim)){ std::cout << i << " iteration: " << sim->getGlobalTime() << "s, Success!!!" << std::endl; succ += 1;}
+		if (reachedGoal(sim)){ 
+			total_time += sim->getGlobalTime(); 
+			succ += 1;
+			std::cout << i << " iteration: " << sim->getGlobalTime() << "s, Success!!!" << std::endl;
+		}
 		// std::cout << sim->getGlobalTime() << ", End!!!" << std::endl;
-		
 
 		// for (size_t i = 0; i < sim->getNumAgents(); ++i) {
 		// 	std::cout << sim->getAgentPosition(i)[1] << std::endl;
 		// }
 
+		
 		myfile.close();
 		delete sim;
 		goals.clear();
 	}
 
     printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
-    // printf("Minimum range difference: %.2f\n", rh_min[0]);
-    printf("Minimum altitude difference: %.2f\n", rh_min);
+    // printf("Minimum altitude difference: %.2f\n", rh_min);
+    printf("Average transition time: %.2f\n", total_time/succ);
+	std::cout << "Succ: " << succ << ", " << "Col: " << col << ", "<< "Stuck: " << stuck << std::endl;
+
 
 
 	return 0;
